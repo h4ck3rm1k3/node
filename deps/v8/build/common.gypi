@@ -344,6 +344,9 @@
         'conditions': [
           ['OS=="linux" or OS=="freebsd" or OS=="openbsd" or OS=="netbsd"', {
             'cflags': [ '-Wno-unused-parameter',
+                        '-std=c++0x',
+                        '-save-temps'
+                        '--verbose'
                         '-Wnon-virtual-dtor', '-Woverloaded-virtual' ],
           }],
           ['OS=="android"', {
@@ -367,6 +370,7 @@
           ['OS=="linux" or OS=="freebsd" or OS=="openbsd" or OS=="netbsd" \
             or OS=="android"', {
             'cflags': [
+              '-std=c++0x',
               '-fdata-sections',
               '-ffunction-sections',
               '-O3',
