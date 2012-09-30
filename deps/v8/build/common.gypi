@@ -68,17 +68,17 @@
 
     'v8_enable_debugger_support%': 1,
 
-    'v8_enable_disassembler%': 0,
+    'v8_enable_disassembler%': 1,
 
     # Enable extra checks in API functions and other strategic places.
     'v8_enable_extra_checks%': 1,
 
-    'v8_object_print%': 0,
+    'v8_object_print%': 1,
 
-    'v8_enable_gdbjit%': 0,
+    'v8_enable_gdbjit%': 1,
 
     # Enable profiling support. Only required on Windows.
-    'v8_enable_prof%': 0,
+    'v8_enable_prof%': 1,
 
     # Some versions of GCC 4.5 seem to need -fno-strict-aliasing.
     'v8_no_strict_aliasing%': 0,
@@ -95,7 +95,7 @@
     # With post mortem support enabled, metadata is embedded into libv8 that
     # describes various parameters of the VM for use by debuggers. See
     # tools/gen-postmortem-metadata.py for details.
-    'v8_postmortem_support%': 'false',
+    'v8_postmortem_support%': 'true',
 
     # For a shared library build, results in "libv8-<(soname_version).so".
     'soname_version%': '',
