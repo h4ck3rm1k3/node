@@ -80,8 +80,8 @@ LIBRARY_FLAGS = {
   },
   'gcc': {
     'all': {
-      'CCFLAGS':      ['$DIALECTFLAGS', '$WARNINGFLAGS'],
-      'CXXFLAGS':     ['-fno-rtti', '-fno-exceptions'],
+      'CCFLAGS':      ['$DIALECTFLAGS', '$WARNINGFLAGS', '-save-temps', '--verbose'],
+      'CXXFLAGS':     ['-fno-rtti', '-fno-exceptions', '-save-temps', '--verbose' ],
     },
     'visibility:hidden': {
       # Use visibility=default to disable this.

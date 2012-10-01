@@ -321,6 +321,7 @@
             '../../src/full-codegen.h',
             '../../src/func-name-inferrer.cc',
             '../../src/func-name-inferrer.h',
+            '../../src/gdb-jit-v2.cc',
             '../../src/global-handles.cc',
             '../../src/global-handles.h',
             '../../src/globals.h',

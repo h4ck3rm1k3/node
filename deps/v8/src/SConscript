@@ -80,7 +80,7 @@ SOURCES = {
     frames.cc
     full-codegen.cc
     func-name-inferrer.cc
-    gdb-jit.cc
+    gdb-jit-v2.cc
     global-handles.cc
     handles.cc
     heap-profiler.cc
