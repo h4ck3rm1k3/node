@@ -49,16 +49,15 @@ request the timer hold the program open. If the timer is already `ref`d calling
 
 ## setImmediate(callback, [arg], [...])
 
-To schedule the "immediate" execution of `callback`. Returns an `immediateId`
-for possible use with `clearImmediate()`. Optionally you can also pass
-arguments to the callback.
+To schedule the "immediate" execution of `callback` after I/O events
+callbacks and before `setTimeout` and `setInterval` . Returns an
+`immediateId` for possible use with `clearImmediate()`. Optionally you
+can also pass arguments to the callback.
 
-Immediates are queued in the order created, and are popped off the queue once
-per loop iteration. This is different from `process.nextTick` which will
-execute `process.maxTickDepth` queued callbacks per iteration. `setImmediate`
-will yield to the event loop after firing a queued callback to make sure I/O is
-not being starved. While order is preserved for execution, other I/O events may
-fire between any two scheduled immediate callbacks.
+Callbacks for immediates are queued in the order in which they were created.
+The entire callback queue is processed every event loop iteration. If you queue
+an immediate from a inside an executing callback that immediate won't fire
+until the next event loop iteration.
 
 ## clearImmediate(immediateId)
 

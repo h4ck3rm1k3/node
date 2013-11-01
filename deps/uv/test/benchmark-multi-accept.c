@@ -85,14 +85,18 @@ static void ipc_close_cb(uv_handle_t* handle);
 static void ipc_connect_cb(uv_connect_t* req, int status);
 static void ipc_read2_cb(uv_pipe_t* ipc_pipe,
                          ssize_t nread,
-                         uv_buf_t buf,
+                         const uv_buf_t* buf,
                          uv_handle_type type);
-static uv_buf_t ipc_alloc_cb(uv_handle_t* handle, size_t suggested_size);
+static void ipc_alloc_cb(uv_handle_t* handle,
+                         size_t suggested_size,
+                         uv_buf_t* buf);
 
 static void sv_async_cb(uv_async_t* handle, int status);
 static void sv_connection_cb(uv_stream_t* server_handle, int status);
-static void sv_read_cb(uv_stream_t* handle, ssize_t nread, uv_buf_t buf);
-static uv_buf_t sv_alloc_cb(uv_handle_t* handle, size_t suggested_size);
+static void sv_read_cb(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf);
+static void sv_alloc_cb(uv_handle_t* handle,
+                        size_t suggested_size,
+                        uv_buf_t* buf);
 
 static void cl_connect_cb(uv_connect_t* req, int status);
 static void cl_idle_cb(uv_idle_t* handle, int status);
@@ -157,16 +161,19 @@ static void ipc_connect_cb(uv_connect_t* req, int status) {
 }
 
 
-static uv_buf_t ipc_alloc_cb(uv_handle_t* handle, size_t suggested_size) {
+static void ipc_alloc_cb(uv_handle_t* handle,
+                         size_t suggested_size,
+                         uv_buf_t* buf) {
   struct ipc_client_ctx* ctx;
   ctx = container_of(handle, struct ipc_client_ctx, ipc_pipe);
-  return uv_buf_init(ctx->scratch, sizeof(ctx->scratch));
+  buf->base = ctx->scratch;
+  buf->len = sizeof(ctx->scratch);
 }
 
 
 static void ipc_read2_cb(uv_pipe_t* ipc_pipe,
                          ssize_t nread,
-                         uv_buf_t buf,
+                         const uv_buf_t* buf,
                          uv_handle_type type) {
   struct ipc_client_ctx* ctx;
   uv_loop_t* loop;
@@ -202,11 +209,8 @@ static void send_listen_handles(uv_handle_type type,
 
   if (type == UV_TCP) {
     ASSERT(0 == uv_tcp_init(loop, (uv_tcp_t*) &ctx.server_handle));
-    ASSERT(0 == uv_tcp_bind((uv_tcp_t*) &ctx.server_handle, listen_addr));
-  }
-  else if (type == UV_NAMED_PIPE) {
-    ASSERT(0 == uv_pipe_init(loop, (uv_pipe_t*) &ctx.server_handle, 0));
-    ASSERT(0 == uv_pipe_bind((uv_pipe_t*) &ctx.server_handle, IPC_PIPE_NAME));
+    ASSERT(0 == uv_tcp_bind((uv_tcp_t*) &ctx.server_handle,
+                            (const struct sockaddr*) &listen_addr));
   }
   else
     ASSERT(0);
@@ -218,9 +222,9 @@ static void send_listen_handles(uv_handle_type type,
   for (i = 0; i < num_servers; i++)
     uv_sem_post(&servers[i].semaphore);
 
-  ASSERT(0 == uv_run(loop));
+  ASSERT(0 == uv_run(loop, UV_RUN_DEFAULT));
   uv_close((uv_handle_t*) &ctx.server_handle, NULL);
-  ASSERT(0 == uv_run(loop));
+  ASSERT(0 == uv_run(loop, UV_RUN_DEFAULT));
 
   for (i = 0; i < num_servers; i++)
     uv_sem_wait(&servers[i].semaphore);
@@ -238,7 +242,7 @@ static void get_listen_handle(uv_loop_t* loop, uv_stream_t* server_handle) {
                   &ctx.ipc_pipe,
                   IPC_PIPE_NAME,
                   ipc_connect_cb);
-  ASSERT(0 == uv_run(loop));
+  ASSERT(0 == uv_run(loop, UV_RUN_DEFAULT));
 }
 
 
@@ -262,7 +266,7 @@ static void server_cb(void *arg) {
   ASSERT(0 == uv_listen((uv_stream_t*) &ctx->server_handle,
                         128,
                         sv_connection_cb));
-  ASSERT(0 == uv_run(loop));
+  ASSERT(0 == uv_run(loop, UV_RUN_DEFAULT));
 
   uv_loop_delete(loop);
 }
@@ -299,15 +303,19 @@ static void sv_connection_cb(uv_stream_t* server_handle, int status) {
 }
 
 
-static uv_buf_t sv_alloc_cb(uv_handle_t* handle, size_t suggested_size) {
-  static char buf[32];
-  return uv_buf_init(buf, sizeof(buf));
+static void sv_alloc_cb(uv_handle_t* handle,
+                        size_t suggested_size,
+                        uv_buf_t* buf) {
+  static char slab[32];
+  buf->base = slab;
+  buf->len = sizeof(slab);
 }
 
 
-static void sv_read_cb(uv_stream_t* handle, ssize_t nread, uv_buf_t buf) {
-  ASSERT(nread == -1);
-  ASSERT(uv_last_error(handle->loop).code == UV_EOF);
+static void sv_read_cb(uv_stream_t* handle,
+                       ssize_t nread,
+                       const uv_buf_t* buf) {
+  ASSERT(nread == UV_EOF);
   uv_close((uv_handle_t*) handle, (uv_close_cb) free);
 }
 
@@ -339,7 +347,7 @@ static void cl_close_cb(uv_handle_t* handle) {
   ASSERT(0 == uv_tcp_init(handle->loop, (uv_tcp_t*) &ctx->client_handle));
   ASSERT(0 == uv_tcp_connect(&ctx->connect_req,
                              (uv_tcp_t*) &ctx->client_handle,
-                             listen_addr,
+                             (const struct sockaddr*) &listen_addr,
                              cl_connect_cb));
 }
 
@@ -352,7 +360,7 @@ static int test_tcp(unsigned int num_servers, unsigned int num_clients) {
   unsigned int i;
   double time;
 
-  listen_addr = uv_ip4_addr("127.0.0.1", TEST_PORT);
+  ASSERT(0 == uv_ip4_addr("127.0.0.1", TEST_PORT, &listen_addr));
   loop = uv_default_loop();
 
   servers = calloc(num_servers, sizeof(servers[0]));
@@ -380,14 +388,14 @@ static int test_tcp(unsigned int num_servers, unsigned int num_clients) {
     ASSERT(0 == uv_tcp_init(loop, handle));
     ASSERT(0 == uv_tcp_connect(&ctx->connect_req,
                                handle,
-                               listen_addr,
+                               (const struct sockaddr*) &listen_addr,
                                cl_connect_cb));
     ASSERT(0 == uv_idle_init(loop, &ctx->idle_handle));
   }
 
   {
     uint64_t t = uv_hrtime();
-    ASSERT(0 == uv_run(loop));
+    ASSERT(0 == uv_run(loop, UV_RUN_DEFAULT));
     t = uv_hrtime() - t;
     time = t / 1e9;
   }
@@ -415,8 +423,8 @@ static int test_tcp(unsigned int num_servers, unsigned int num_clients) {
 
   free(clients);
   free(servers);
-  uv_loop_delete(uv_default_loop()); /* Silence valgrind. */
 
+  MAKE_VALGRIND_HAPPY();
   return 0;
 }
 

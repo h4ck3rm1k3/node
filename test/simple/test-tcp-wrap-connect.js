@@ -26,14 +26,20 @@ var TCP = process.binding('tcp_wrap').TCP;
 function makeConnection() {
   var client = new TCP();
 
-  var req = client.connect('127.0.0.1', common.PORT);
+  var req = {};
+  var err = client.connect(req, '127.0.0.1', common.PORT);
+  assert.equal(err, 0);
+
   req.oncomplete = function(status, client_, req_) {
     assert.equal(0, status);
     assert.equal(client, client_);
     assert.equal(req, req_);
 
     console.log('connected');
-    var shutdownReq = client.shutdown();
+    var shutdownReq = {};
+    var err = client.shutdown(shutdownReq);
+    assert.equal(err, 0);
+
     shutdownReq.oncomplete = function(status, client_, req_) {
       console.log('shutdown complete');
       assert.equal(0, status);
@@ -54,6 +60,7 @@ var shutdownCount = 0;
 var server = require('net').Server(function(s) {
   console.log('got connection');
   connectCount++;
+  s.resume();
   s.on('end', function() {
     console.log('got eof');
     endCount++;

@@ -8,6 +8,7 @@ body {
   font-size: 14px;
   line-height: 180%;
   color: black;
+  background-color: white;
   margin: 0; padding: 49px 0 0 0;
   border-top: 6px #8CC84B solid;
 }
@@ -66,6 +67,30 @@ code a:hover {
   margin: 0;
 }
 
+.api_stability_0 {
+  border-color: #D60027;
+}
+
+.api_stability_1 {
+  border-color: #EC5315;
+}
+
+.api_stability_2 {
+  border-color: #FFD700;
+}
+
+.api_stability_3 {
+  border-color: #AEC516;
+}
+
+.api_stability_4 {
+  border-color: #009431;
+}
+
+.api_stability_5 {
+  border-color: #0084B6;
+}
+
 ul.plain {
   list-style: none;
 }
@@ -78,6 +103,23 @@ p {
   margin: 0 0 1.4667em 0;
   position: relative;
   text-rendering: optimizeLegibility;
+}
+
+table {
+  border-collapse: collapse;
+  margin: 0 0 1.4667em 0;
+}
+
+th, td {
+  border: 1px solid #aaa;
+}
+
+table p {
+  margin: 0 1ex;
+}
+
+th {
+  text-align:left;
 }
 
 .apidoc #apicontent p,
@@ -309,7 +351,7 @@ hr {
 }
 
 p tt,
-p code {
+p code, span.type {
   background: #f8f8ff;
   border: 1px solid #dedede;
   padding: 0 0.2em;
@@ -439,6 +481,16 @@ a.anchor {
   width: 942px;
   margin: 150px auto 55px auto;
   padding: 0;
+}
+
+#footer .joyent-logo {
+  display:block;
+  position:absolute;
+  overflow:hidden;
+  text-indent:-999em;
+  height:100px;
+  width:190px;
+  z-index:999;
 }
 
 #footer p {

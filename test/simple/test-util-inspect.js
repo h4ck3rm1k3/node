@@ -77,8 +77,6 @@ var ex = util.inspect(new Error('FAIL'), true);
 assert.ok(ex.indexOf('[Error: FAIL]') != -1);
 assert.ok(ex.indexOf('[stack]') != -1);
 assert.ok(ex.indexOf('[message]') != -1);
-assert.ok(ex.indexOf('[arguments]') != -1);
-assert.ok(ex.indexOf('[type]') != -1);
 
 // GH-1941
 // should not throw:
@@ -136,4 +134,63 @@ assert.doesNotThrow(function() {
   util.inspect({
     hasOwnProperty: null
   });
+});
+
+// new API, accepts an "options" object
+var subject = { foo: 'bar', hello: 31, a: { b: { c: { d: 0 } } } };
+Object.defineProperty(subject, 'hidden', { enumerable: false, value: null });
+
+assert(util.inspect(subject, { showHidden: false }).indexOf('hidden') === -1);
+assert(util.inspect(subject, { showHidden: true }).indexOf('hidden') !== -1);
+assert(util.inspect(subject, { colors: false }).indexOf('\u001b[32m') === -1);
+assert(util.inspect(subject, { colors: true }).indexOf('\u001b[32m') !== -1);
+assert(util.inspect(subject, { depth: 2 }).indexOf('c: [Object]') !== -1);
+assert(util.inspect(subject, { depth: 0 }).indexOf('a: [Object]') !== -1);
+assert(util.inspect(subject, { depth: null }).indexOf('{ d: 0 }') !== -1);
+
+// "customInspect" option can enable/disable calling inspect() on objects
+subject = { inspect: function() { return 123; } };
+
+assert(util.inspect(subject, { customInspect: true }).indexOf('123') !== -1);
+assert(util.inspect(subject, { customInspect: true }).indexOf('inspect') === -1);
+assert(util.inspect(subject, { customInspect: false }).indexOf('123') === -1);
+assert(util.inspect(subject, { customInspect: false }).indexOf('inspect') !== -1);
+
+// custom inspect() functions should be able to return other Objects
+subject.inspect = function() { return { foo: 'bar' }; };
+
+assert.equal(util.inspect(subject), '{ foo: \'bar\' }');
+
+subject.inspect = function(depth, opts) {
+  assert.strictEqual(opts.customInspectOptions, true);
+};
+
+util.inspect(subject, { customInspectOptions: true });
+
+// util.inspect with "colors" option should produce as many lines as without it
+function test_lines(input) {
+  var count_lines = function(str) {
+    return (str.match(/\n/g) || []).length;
+  }
+
+  var without_color = util.inspect(input);
+  var with_color = util.inspect(input, {colors: true});
+  assert.equal(count_lines(without_color), count_lines(with_color));
+}
+
+test_lines([1, 2, 3, 4, 5, 6, 7]);
+test_lines(function() {
+  var big_array = [];
+  for (var i = 0; i < 100; i++) {
+    big_array.push(i);
+  }
+  return big_array;
+}());
+test_lines({foo: 'bar', baz: 35, b: {a: 35}});
+test_lines({
+  foo: 'bar',
+  baz: 35,
+  b: {a: 35},
+  very_long_key: 'very_long_value',
+  even_longer_key: ['with even longer value in array']
 });

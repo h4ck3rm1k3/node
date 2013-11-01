@@ -55,6 +55,7 @@ static void fs_do(struct fs_req* req);
 static void fs_cb(uv_fs_t* handle);
 
 static volatile int thread_called;
+static uv_key_t tls_key;
 
 
 static void getaddrinfo_do(struct getaddrinfo_req* req) {
@@ -128,7 +129,7 @@ static void do_work(void* arg) {
     fs_do(req);
   }
 
-  r = uv_run(loop);
+  r = uv_run(loop, UV_RUN_DEFAULT);
   ASSERT(r == 0);
 
   uv_loop_delete(loop);
@@ -179,5 +180,30 @@ TEST_IMPL(threadpool_multiple_event_loops) {
     ASSERT(threads[i].thread_called);
   }
 
+  return 0;
+}
+
+
+static void tls_thread(void* arg) {
+  ASSERT(NULL == uv_key_get(&tls_key));
+  uv_key_set(&tls_key, arg);
+  ASSERT(arg == uv_key_get(&tls_key));
+  uv_key_set(&tls_key, NULL);
+  ASSERT(NULL == uv_key_get(&tls_key));
+}
+
+
+TEST_IMPL(thread_local_storage) {
+  char name[] = "main";
+  uv_thread_t threads[2];
+  ASSERT(0 == uv_key_create(&tls_key));
+  ASSERT(NULL == uv_key_get(&tls_key));
+  uv_key_set(&tls_key, name);
+  ASSERT(name == uv_key_get(&tls_key));
+  ASSERT(0 == uv_thread_create(threads + 0, tls_thread, threads + 0));
+  ASSERT(0 == uv_thread_create(threads + 1, tls_thread, threads + 1));
+  ASSERT(0 == uv_thread_join(threads + 0));
+  ASSERT(0 == uv_thread_join(threads + 1));
+  uv_key_delete(&tls_key);
   return 0;
 }

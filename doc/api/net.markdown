@@ -64,6 +64,8 @@ For TCP sockets, `options` argument should be an object which specifies:
 
   - `localAddress`: Local interface to bind to for network connections.
 
+  - `family` : Version of IP stack. Defaults to `4`.
+
 For UNIX domain sockets, `options` argument should be an object which specifies:
 
   - `path`: Path the client should connect to (Required).
@@ -116,9 +118,8 @@ The `connectListener` parameter will be added as an listener for the
 ## Class: net.Server
 
 This class is used to create a TCP or UNIX server.
-A server is a `net.Socket` that can listen for new incoming connections.
 
-### server.listen(port, [host], [backlog], [listeningListener])
+### server.listen(port, [host], [backlog], [callback])
 
 Begin accepting connections on the specified `port` and `host`.  If the
 `host` is omitted, the server will accept connections directed to any
@@ -130,7 +131,7 @@ The actual length will be determined by your OS through sysctl settings such as
 parameter is 511 (not 512).
 
 This function is asynchronous.  When the server has been bound,
-['listening'][] event will be emitted.  The last parameter `listeningListener`
+['listening'][] event will be emitted.  The last parameter `callback`
 will be added as an listener for the ['listening'][] event.
 
 One issue some users run into is getting `EADDRINUSE` errors. This means that
@@ -150,18 +151,18 @@ would be to wait a second and then try again. This can be done with
 (Note: All sockets in Node set `SO_REUSEADDR` already)
 
 
-### server.listen(path, [listeningListener])
+### server.listen(path, [callback])
 
 Start a UNIX socket server listening for connections on the given `path`.
 
 This function is asynchronous.  When the server has been bound,
-['listening'][] event will be emitted.  The last parameter `listeningListener`
+['listening'][] event will be emitted.  The last parameter `callback`
 will be added as an listener for the ['listening'][] event.
 
-### server.listen(handle, [listeningListener])
+### server.listen(handle, [callback])
 
 * `handle` {Object}
-* `listeningListener` {Function}
+* `callback` {Function}
 
 The `handle` object can be set to either a server or socket (anything
 with an underlying `_handle` member), or a `{fd: <n>}` object.
@@ -173,11 +174,11 @@ already been bound to a port or domain socket.
 Listening on a file descriptor is not supported on Windows.
 
 This function is asynchronous.  When the server has been bound,
-['listening'](#event_listening_) event will be emitted.
-the last parameter `listeningListener` will be added as an listener for the
-['listening'](#event_listening_) event.
+['listening'][] event will be emitted.
+the last parameter `callback` will be added as an listener for the
+['listening'][] event.
 
-### server.close([cb])
+### server.close([callback])
 
 Stops the server from accepting new connections and keeps existing
 connections. This function is asynchronous, the server is finally
@@ -229,11 +230,21 @@ with `child_process.fork()`.
 
 ### server.connections
 
+This function is **deprecated**; please use [server.getConnections()][] instead.
 The number of concurrent connections on the server.
 
-This becomes `null` when sending a socket to a child with `child_process.fork()`.
+This becomes `null` when sending a socket to a child with
+`child_process.fork()`. To poll forks and get current number of active
+connections use asynchronous `server.getConnections` instead.
 
 `net.Server` is an [EventEmitter][] with the following events:
+
+### server.getConnections(callback)
+
+Asynchronously get the number of concurrent connections on the server. Works
+when sockets were sent to forks.
+
+Callback should take two arguments `err` and `count`.
 
 ### Event: 'listening'
 
@@ -289,8 +300,7 @@ then the socket will be opened as a TCP socket, if `host` is omitted,
 opened as a unix socket to that path.
 
 Normally this method is not needed, as `net.createConnection` opens the
-socket. Use this only if you are implementing a custom Socket or if a
-Socket is closed and you want to reuse it to connect to another server.
+socket. Use this only if you are implementing a custom Socket.
 
 This function is asynchronous. When the ['connect'][] event is emitted the
 socket is established. If there is a problem connecting, the `'connect'` event
@@ -419,6 +429,17 @@ The string representation of the remote IP address. For example,
 The numeric representation of the remote port. For example,
 `80` or `21`.
 
+### socket.localAddress
+
+The string representation of the local IP address the remote client is
+connecting on. For example, if you are listening on `'0.0.0.0'` and the
+client connects on `'192.168.1.1'`, the value would be `'192.168.1.1'`.
+
+### socket.localPort
+
+The numeric representation of the local port. For example,
+`80` or `21`.
+
 ### socket.bytesRead
 
 The amount of received bytes.
@@ -429,6 +450,15 @@ The amount of bytes sent.
 
 
 `net.Socket` instances are [EventEmitter][] with the following events:
+
+### Event: 'lookup'
+
+Emitted after resolving the hostname but before connecting.
+Not applicable to UNIX sockets.
+
+* `err` {Error | Null} The error object.  See [dns.lookup()][].
+* `address` {String} The IP address.
+* `family` {String | Null} The address type.  See [dns.lookup()][].
 
 ### Event: 'connect'
 

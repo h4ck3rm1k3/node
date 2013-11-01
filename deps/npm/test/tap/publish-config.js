@@ -1,5 +1,6 @@
 var test = require('tap').test
 var fs = require('fs')
+var osenv = require('osenv')
 var pkg = process.env.npm_config_tmp || '/tmp'
 pkg += '/npm-test-publish-config'
 
@@ -14,8 +15,6 @@ fs.writeFileSync(pkg + '/package.json', JSON.stringify({
 var spawn = require('child_process').spawn
 var npm = require.resolve('../../bin/npm-cli.js')
 var node = process.execPath
-
-console.error('pkg=%j', pkg)
 
 test(function (t) {
   var child
@@ -34,8 +33,18 @@ test(function (t) {
     //
     // there are plenty of other tests to verify that publish
     // itself functions normally.
+    //
+    // Make sure that we don't sit around waiting for lock files
     child = spawn(node, [npm, 'publish'], {
-      cwd: pkg
+      cwd: pkg,
+      env: {
+        npm_config_cache_lock_stale: 1000,
+        npm_config_cache_lock_wait: 1000,
+        HOME: process.env.HOME,
+        Path: process.env.PATH,
+        PATH: process.env.PATH,
+        USERPROFILE: osenv.home()
+      }
     })
   })
 })

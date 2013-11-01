@@ -9,7 +9,7 @@ Much more info available via `npm help` once it's installed.
 
 ## IMPORTANT
 
-**You need node v0.6 or higher to run this program.**
+**You need node v0.8 or higher to run this program.**
 
 To install an old **and unsupported** version of npm that works on node 0.3
 and prior, clone the git repo and dig through the old tags and branches.
@@ -42,11 +42,11 @@ There's a pretty robust install script at
 
 You can set any npm configuration params with that script:
 
-npm_config_prefix=/some/path sh install.sh
+    npm_config_prefix=/some/path sh install.sh
 
 Or, you can run it in uber-debuggery mode:
 
-npm_debug=1 sh install.sh
+    npm_debug=1 sh install.sh
 
 ### Even Fancier
 
@@ -60,7 +60,7 @@ for testing, or running stuff without actually installing npm itself.)
 
 ## Fancy Windows Install
 
-You can download a zip file from <http://npmjs.org/dist/>, and unpack it
+You can download a zip file from <https://npmjs.org/dist/>, and unpack it
 in the same folder where node.exe lives.
 
 If that's not fancy enough for you, then you can fetch the code with
@@ -169,19 +169,18 @@ help config` to learn about all the options you can set there.
 
 ## More Docs
 
-Check out the [docs](http://npmjs.org/doc/),
-especially the [faq](http://npmjs.org/doc/faq.html).
+Check out the [docs](https://npmjs.org/doc/),
+especially the [faq](https://npmjs.org/doc/faq.html).
 
 You can use the `npm help` command to read any of them.
 
 If you're a developer, and you want to use npm to publish your program,
-you should [read this](http://npmjs.org/doc/developers.html)
+you should [read this](https://npmjs.org/doc/developers.html)
 
 ## Legal Stuff
 
-"npm" and "the npm registry" are owned by Isaac Z. Schlueter.  All
-rights not explicitly granted in the MIT license are reserved. See the
-included LICENSE file for more details.
+"npm" and "the npm registry" are owned by Isaac Z. Schlueter.
+All rights reserved.  See the included LICENSE file for more details.
 
 "Node.js" and "node" are trademarks owned by Joyent, Inc.  npm is not
 officially part of the Node.js project, and is neither owned by nor
@@ -221,7 +220,7 @@ If this concerns you, inspect the source before using packages.
 When you find issues, please report them:
 
 * web:
-  <http://github.com/isaacs/npm/issues>
+  <https://github.com/isaacs/npm/issues>
 * email:
   <npm-@googlegroups.com>
 
@@ -234,6 +233,6 @@ will no doubt tell you to put the output in a gist or email.
 ## SEE ALSO
 
 * npm(1)
-* npm-faq(1)
+* npm-faq(7)
 * npm-help(1)
-* npm-index(1)
+* npm-index(7)

@@ -31,13 +31,17 @@ process.env.TMPDIR = '/tmpdir';
 process.env.TMP = '/tmp';
 process.env.TEMP = '/temp';
 var t = ( process.platform === 'win32' ? 'c:\\windows\\temp' : '/tmp' );
-assert.equal(os.tmpDir(), '/tmpdir');
+assert.equal(os.tmpdir(), '/tmpdir');
 process.env.TMPDIR = '';
-assert.equal(os.tmpDir(), '/tmp');
+assert.equal(os.tmpdir(), '/tmp');
 process.env.TMP = '';
-assert.equal(os.tmpDir(), '/temp');
+assert.equal(os.tmpdir(), '/temp');
 process.env.TEMP = '';
-assert.equal(os.tmpDir(), t);
+assert.equal(os.tmpdir(), t);
+
+var endianness = os.endianness();
+console.log('endianness = %s', endianness);
+assert.ok(/[BL]E/.test(endianness));
 
 var hostname = os.hostname();
 console.log('hostname = %s', hostname);
@@ -81,13 +85,20 @@ switch (platform) {
   case 'linux':
     var filter = function(e) { return e.address == '127.0.0.1'; };
     var actual = interfaces.lo.filter(filter);
-    var expected = [{ address: '127.0.0.1', family: 'IPv4', internal: true }];
+    var expected = [{ address: '127.0.0.1', netmask: '255.0.0.0',
+                      mac: '00:00:00:00:00:00', family: 'IPv4',
+                      internal: true }];
     assert.deepEqual(actual, expected);
     break;
   case 'win32':
     var filter = function(e) { return e.address == '127.0.0.1'; };
     var actual = interfaces['Loopback Pseudo-Interface 1'].filter(filter);
-    var expected = [{ address: '127.0.0.1', family: 'IPv4', internal: true }];
+    // NOTE: Windows does not set a prefix or netmask on 127.0.0.1, so we
+    //       default to /32 here.  We could put in a special case to force
+    //       to /8 if desired.
+    var expected = [{ address: '127.0.0.1', netmask: '255.255.255.255',
+                      mac: '00:00:00:00:00:00', family: 'IPv4',
+                      internal: true }];
     assert.deepEqual(actual, expected);
     break;
 }

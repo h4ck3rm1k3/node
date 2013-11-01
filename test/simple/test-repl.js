@@ -40,7 +40,7 @@ var net = require('net'),
 // absolute path to test/fixtures/a.js
 var moduleFilename = require('path').join(common.fixturesDir, 'a');
 
-common.error('repl test');
+console.error('repl test');
 
 // function for REPL to run
 invoke_me = function(arg) {
@@ -51,7 +51,7 @@ function send_expect(list) {
   if (list.length > 0) {
     var cur = list.shift();
 
-    common.error('sending ' + JSON.stringify(cur.send));
+    console.error('sending ' + JSON.stringify(cur.send));
 
     cur.client.expect = cur.expect;
     cur.client.list = list;
@@ -74,7 +74,7 @@ function error_test() {
 
   client_unix.on('data', function(data) {
     read_buffer += data.toString('ascii', 0, data.length);
-    common.error('Unix data: ' + JSON.stringify(read_buffer) + ', expecting ' +
+    console.error('Unix data: ' + JSON.stringify(read_buffer) + ', expecting ' +
                  (client_unix.expect.exec ?
                   client_unix.expect :
                   JSON.stringify(client_unix.expect)));
@@ -83,13 +83,13 @@ function error_test() {
       // if it's an exact match, then don't do the regexp
       if (read_buffer !== client_unix.expect) {
         assert.ok(read_buffer.match(client_unix.expect));
-        common.error('match');
+        console.error('match');
       }
       read_buffer = '';
       if (client_unix.list && client_unix.list.length > 0) {
         send_expect(client_unix.list);
       } else {
-        common.error('End of Error test, running TCP test.');
+        console.error('End of Error test, running TCP test.');
         tcp_test();
       }
 
@@ -100,12 +100,12 @@ function error_test() {
       if (client_unix.list && client_unix.list.length > 0) {
         send_expect(client_unix.list);
       } else {
-        common.error('End of Error test, running TCP test.\n');
+        console.error('End of Error test, running TCP test.\n');
         tcp_test();
       }
 
     } else {
-      common.error('didn\'t see prompt yet, buffering.');
+      console.error('didn\'t see prompt yet, buffering.');
     }
   });
 
@@ -119,6 +119,15 @@ function error_test() {
     // You can recover with the .break command
     { client: client_unix, send: '.break',
       expect: prompt_unix },
+    // But passing the same string to eval() should throw
+    { client: client_unix, send: 'eval("function test_func() {")',
+      expect: /^SyntaxError: Unexpected end of input/ },
+    // Floating point numbers are not interpreted as REPL commands.
+    { client: client_unix, send: '.1234',
+      expect: '0.1234' },
+    // Floating point expressions are not interpreted as REPL commands
+    { client: client_unix, send: '.1+.1',
+      expect: '0.2' },
     // Can parse valid JSON
     { client: client_unix, send: 'JSON.parse(\'{"valid": "json"}\');',
       expect: '{ valid: \'json\' }'},
@@ -126,10 +135,36 @@ function error_test() {
     // should throw
     { client: client_unix, send: 'JSON.parse(\'{invalid: \\\'json\\\'}\');',
       expect: /^SyntaxError: Unexpected token i/ },
+    // end of input to JSON.parse error is special case of syntax error,
+    // should throw
+    { client: client_unix, send: 'JSON.parse(\'066\');',
+      expect: /^SyntaxError: Unexpected number/ },
+    // should throw
+    { client: client_unix, send: 'JSON.parse(\'{\');',
+      expect: /^SyntaxError: Unexpected end of input/ },
     // invalid RegExps are a special case of syntax error,
     // should throw
     { client: client_unix, send: '/(/;',
       expect: /^SyntaxError: Invalid regular expression\:/ },
+    // invalid RegExp modifiers are a special case of syntax error,
+    // should throw (GH-4012)
+    { client: client_unix, send: 'new RegExp("foo", "wrong modifier");',
+      expect: /^SyntaxError: Invalid flags supplied to RegExp constructor/ },
+    // strict mode syntax errors should be caught (GH-5178)
+    { client: client_unix, send: '(function() { "use strict"; return 0755; })()',
+      expect: /^SyntaxError: Octal literals are not allowed in strict mode/ },
+    { client: client_unix, send: '(function() { "use strict"; return { p: 1, p: 2 }; })()',
+      expect: /^SyntaxError: Duplicate data property in object literal not allowed in strict mode/ },
+    { client: client_unix, send: '(function(a, a, b) { "use strict"; return a + b + c; })()',
+      expect: /^SyntaxError: Strict mode function may not have duplicate parameter names/ },
+    { client: client_unix, send: '(function() { "use strict"; with (this) {} })()',
+      expect: /^SyntaxError: Strict mode code may not include a with statement/ },
+    { client: client_unix, send: '(function() { "use strict"; var x; delete x; })()',
+      expect: /^SyntaxError: Delete of an unqualified identifier in strict mode/ },
+    { client: client_unix, send: '(function() { "use strict"; eval = 17; })()',
+      expect: /^SyntaxError: Assignment to eval or arguments is not allowed in strict mode/ },
+    { client: client_unix, send: '(function() { "use strict"; if (true){ function f() { } } })()',
+      expect: /^SyntaxError: In strict mode code, functions can only be declared at top level or immediately within another function/ },
     // Named functions can be used:
     { client: client_unix, send: 'function blah() { return 1; }',
       expect: prompt_unix },
@@ -158,7 +193,11 @@ function error_test() {
     { client: client_unix, send: '(function () {\n\nreturn 1;\n})()',
       expect: '1' },
     { client: client_unix, send: '{\n\na: 1\n}',
-      expect: '{ a: 1 }' }
+      expect: '{ a: 1 }' },
+    { client: client_unix, send: 'url.format("http://google.com")',
+      expect: 'http://google.com/' },
+    { client: client_unix, send: 'var path = 42; path',
+      expect: '42' }
   ]);
 }
 
@@ -197,20 +236,20 @@ function tcp_test() {
 
     client_tcp.on('data', function(data) {
       read_buffer += data.toString('ascii', 0, data.length);
-      common.error('TCP data: ' + JSON.stringify(read_buffer) +
+      console.error('TCP data: ' + JSON.stringify(read_buffer) +
                    ', expecting ' + JSON.stringify(client_tcp.expect));
       if (read_buffer.indexOf(prompt_tcp) !== -1) {
         assert.strictEqual(client_tcp.expect, read_buffer);
-        common.error('match');
+        console.error('match');
         read_buffer = '';
         if (client_tcp.list && client_tcp.list.length > 0) {
           send_expect(client_tcp.list);
         } else {
-          common.error('End of TCP test.\n');
+          console.error('End of TCP test.\n');
           clean_up();
         }
       } else {
-        common.error('didn\'t see prompt yet, buffering');
+        console.error('didn\'t see prompt yet, buffering');
       }
     });
 
@@ -233,7 +272,12 @@ function unix_test() {
       socket.end();
     });
 
-    repl.start(prompt_unix, socket).context.message = message;
+    repl.start({
+      prompt: prompt_unix,
+      input: socket,
+      output: socket,
+      useGlobal: true
+    }).context.message = message;
   });
 
   server_unix.on('listening', function() {
@@ -261,20 +305,20 @@ function unix_test() {
 
     client_unix.on('data', function(data) {
       read_buffer += data.toString('ascii', 0, data.length);
-      common.error('Unix data: ' + JSON.stringify(read_buffer) +
+      console.error('Unix data: ' + JSON.stringify(read_buffer) +
                    ', expecting ' + JSON.stringify(client_unix.expect));
       if (read_buffer.indexOf(prompt_unix) !== -1) {
         assert.strictEqual(client_unix.expect, read_buffer);
-        common.error('match');
+        console.error('match');
         read_buffer = '';
         if (client_unix.list && client_unix.list.length > 0) {
           send_expect(client_unix.list);
         } else {
-          common.error('End of Unix test, running Error test.\n');
+          console.error('End of Unix test, running Error test.\n');
           process.nextTick(error_test);
         }
       } else {
-        common.error('didn\'t see prompt yet, buffering.');
+        console.error('didn\'t see prompt yet, buffering.');
       }
     });
 

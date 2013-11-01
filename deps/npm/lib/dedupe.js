@@ -35,8 +35,16 @@ function dedupe (args, silent, cb) {
 
 function dedupe_ (dir, filter, unavoidable, dryrun, silent, cb) {
   readInstalled(path.resolve(dir), {}, null, function (er, data, counter) {
+    if (er) {
+      return cb(er)
+    }
+
+    if (!data) {
+      return cb()
+    }
+
     // find out which things are dupes
-    var dupes = Object.keys(counter).filter(function (k) {
+    var dupes = Object.keys(counter || {}).filter(function (k) {
       if (filter.length && -1 === filter.indexOf(k)) return false
       return counter[k] > 1 && !unavoidable[k]
     }).reduce(function (s, k) {
@@ -225,7 +233,7 @@ function findVersions (npm, summary, cb) {
     // not actually a dupe, or perhaps all the other copies were
     // children of a dupe, so this'll maybe be picked up later.
     if (locs.length === 0) {
-      return cb()
+      return cb(null, [])
     }
 
     // { <folder>: <version> }
@@ -240,7 +248,14 @@ function findVersions (npm, summary, cb) {
     npm.registry.get(name, function (er, data) {
       var regVersions = er ? [] : Object.keys(data.versions)
       var locMatch = bestMatch(versions, ranges)
-      var regMatch = bestMatch(regVersions, ranges)
+      var regMatch;
+      var tag = npm.config.get("tag");
+      var distTags = data["dist-tags"];
+      if (distTags && distTags[tag] && data.versions[distTags[tag]]) {
+        regMatch = distTags[tag]
+      } else {
+        regMatch = bestMatch(regVersions, ranges)
+      }
 
       cb(null, [[name, has, loc, locMatch, regMatch, locs]])
     })
@@ -250,9 +265,9 @@ function findVersions (npm, summary, cb) {
 function bestMatch (versions, ranges) {
   return versions.filter(function (v) {
     return !ranges.some(function (r) {
-      return !semver.satisfies(v, r)
+      return !semver.satisfies(v, r, true)
     })
-  }).sort(semver.compare).pop()
+  }).sort(semver.compareLoose).pop()
 }
 
 
@@ -265,6 +280,7 @@ function readInstalled (dir, counter, parent, cb) {
   })
 
   readJson(path.resolve(dir, "package.json"), function (er, data) {
+    if (er && er.code !== "ENOENT" && er.code !== "ENOTDIR") return cb(er)
     if (er) return cb() // not a package, probably.
     counter[data.name] = counter[data.name] || 0
     counter[data.name]++
@@ -293,6 +309,9 @@ function readInstalled (dir, counter, parent, cb) {
 
   fs.readdir(path.resolve(dir, "node_modules"), function (er, c) {
     children = c || [] // error is ok, just means no children.
+    children = children.filter(function (p) {
+      return !p.match(/^[\._-]/)
+    })
     next()
   })
 

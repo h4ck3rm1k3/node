@@ -145,7 +145,7 @@ TEST(function test_reverse_bogus(done) {
   }
 
   assert.ok(error instanceof Error);
-  assert.strictEqual(error.errno, 'ENOTIMP');
+  assert.strictEqual(error.errno, 'EINVAL');
 
   done();
 });
@@ -219,6 +219,30 @@ TEST(function test_resolveSrv(done) {
   checkWrap(req);
 });
 
+TEST(function test_resolveNaptr(done) {
+  var req = dns.resolveNaptr('sip2sip.info', function(err, result) {
+    if (err) throw err;
+
+    assert.ok(result.length > 0);
+
+    for (var i = 0; i < result.length; i++) {
+      var item = result[i];
+      assert.ok(item);
+      assert.ok(typeof item === 'object');
+
+      assert.ok(typeof item.flags === 'string');
+      assert.ok(typeof item.service === 'string');
+      assert.ok(typeof item.regexp === 'string');
+      assert.ok(typeof item.replacement === 'string');
+      assert.ok(typeof item.order === 'number');
+      assert.ok(typeof item.preference === 'number');
+    }
+
+    done();
+  });
+
+  checkWrap(req);
+});
 
 TEST(function test_resolveCname(done) {
   var req = dns.resolveCname('www.microsoft.com', function(err, names) {
@@ -308,6 +332,7 @@ TEST(function test_lookup_failure(done) {
     assert.ok(err instanceof Error);
     assert.strictEqual(err.errno, dns.NOTFOUND);
     assert.strictEqual(err.errno, 'ENOTFOUND');
+    assert.ok(!/ENOENT/.test(err.message));
 
     done();
   });
@@ -368,6 +393,45 @@ TEST(function test_lookup_localhost_ipv4(done) {
 });
 
 
+TEST(function test_reverse_failure(done) {
+  var req = dns.reverse('0.0.0.0', function(err) {
+    assert(err instanceof Error);
+    assert.strictEqual(err.code, 'ENOTFOUND');  // Silly error code...
+    assert.strictEqual(err.hostname, '0.0.0.0');
+
+    done();
+  });
+
+  checkWrap(req);
+});
+
+
+TEST(function test_lookup_failure(done) {
+  var req = dns.lookup('nosuchhostimsure', function(err) {
+    assert(err instanceof Error);
+    assert.strictEqual(err.code, 'ENOTFOUND');  // Silly error code...
+    assert.strictEqual(err.hostname, 'nosuchhostimsure');
+
+    done();
+  });
+
+  checkWrap(req);
+});
+
+
+TEST(function test_resolve_failure(done) {
+  var req = dns.resolve4('nosuchhostimsure', function(err) {
+    assert(err instanceof Error);
+    assert.strictEqual(err.code, 'ENOTFOUND');  // Silly error code...
+    assert.strictEqual(err.hostname, 'nosuchhostimsure');
+
+    done();
+  });
+
+  checkWrap(req);
+});
+
+
 /* Disabled because it appears to be not working on linux. */
 /* TEST(function test_lookup_localhost_ipv6(done) {
   var req = dns.lookup('localhost', 6, function(err, ip, family) {
@@ -385,17 +449,18 @@ TEST(function test_lookup_localhost_ipv4(done) {
 var getaddrinfoCallbackCalled = false;
 
 console.log('looking up nodejs.org...');
-var req = process.binding('cares_wrap').getaddrinfo('nodejs.org');
 
-req.oncomplete = function(domains) {
+var req = {};
+var err = process.binding('cares_wrap').getaddrinfo(req, 'nodejs.org', 4);
+
+req.oncomplete = function(err, domains) {
+  assert.strictEqual(err, 0);
   console.log('nodejs.org = ', domains);
   assert.ok(Array.isArray(domains));
   assert.ok(domains.length >= 1);
   assert.ok(typeof domains[0] == 'string');
   getaddrinfoCallbackCalled = true;
 };
-
-
 
 process.on('exit', function() {
   console.log(completed + ' tests completed');

@@ -35,13 +35,14 @@ var options = {
 };
 
 var server = https.createServer(options, function (req, res) {
-  console.log("Connect from: " + req.connection.socket.remoteAddress);
-  assert.equal('127.0.0.2', req.connection.socket.remoteAddress);
+  console.log("Connect from: " + req.connection.remoteAddress);
+  assert.equal('127.0.0.2', req.connection.remoteAddress);
 
   req.on('end', function() {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('You are from: ' + req.connection.remoteAddress);
   });
+  req.resume();
 });
 
 server.listen(common.PORT, "127.0.0.1", function() {
@@ -59,6 +60,7 @@ server.listen(common.PORT, "127.0.0.1", function() {
       server.close();
       process.exit();
     });
+    res.resume();
   });
   req.end();
 });

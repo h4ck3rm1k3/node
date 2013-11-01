@@ -24,6 +24,8 @@ var common = require('../common'),
     Stream = require('stream'),
     repl = require('repl');
 
+common.globalCheck = false;
+
 // create a dummy stream that does nothing
 var stream = new Stream();
 stream.write = stream.pause = stream.resume = function(){};
@@ -65,5 +67,4 @@ assert.equal(r2.rli.terminal, false);
 assert.equal(r2.useColors, true);
 assert.equal(r2.useGlobal, true);
 assert.equal(r2.ignoreUndefined, true);
-assert.equal(r2.eval, evaler);
 assert.equal(r2.writer, writer);

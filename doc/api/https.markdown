@@ -10,6 +10,14 @@ separate module.
 This class is a subclass of `tls.Server` and emits events same as
 `http.Server`. See `http.Server` for more information.
 
+### server.setTimeout(msecs, callback)
+
+See [http.Server#setTimeout()][].
+
+### server.timeout
+
+See [http.Server#timeout][].
+
 ## https.createServer(options, [requestListener])
 
 Returns a new HTTPS web server object. The `options` is similar to
@@ -46,6 +54,17 @@ Or
       res.end("hello world\n");
     }).listen(8000);
 
+
+### server.listen(port, [host], [backlog], [callback])
+### server.listen(path, [callback])
+### server.listen(handle, [callback])
+
+See [http.listen()][] for details.
+
+### server.close([callback])
+
+See [http.close()][] for details.
+
 ## https.request(options, callback)
 
 Makes a request to a secure web server.
@@ -60,7 +79,7 @@ Example:
     var https = require('https');
 
     var options = {
-      host: 'encrypted.google.com',
+      hostname: 'encrypted.google.com',
       port: 443,
       path: '/',
       method: 'GET'
@@ -81,11 +100,6 @@ Example:
     });
 
 The options argument has the following options
-
-- host: IP or domain of host to make request to. Defaults to `'localhost'`.
-- port: port of host to request to. Defaults to 443.
-- path: Path to request. Default `'/'`.
-- method: HTTP request method. Default `'GET'`.
 
 - `host`: A domain name or IP address of the server to issue the request to.
   Defaults to `'localhost'`.
@@ -120,13 +134,16 @@ The following options from [tls.connect()][] can also be specified. However, a
   the list of supplied CAs. An `'error'` event is emitted if verification
   fails. Verification happens at the connection level, *before* the HTTP
   request is sent. Default `true`.
+- `secureProtocol`: The SSL method to use, e.g. `SSLv3_method` to force
+  SSL version 3. The possible values depend on your installation of
+  OpenSSL and are defined in the constant [SSL_METHODS][].
 
 In order to specify these options, use a custom `Agent`.
 
 Example:
 
     var options = {
-      host: 'encrypted.google.com',
+      hostname: 'encrypted.google.com',
       port: 443,
       path: '/',
       method: 'GET',
@@ -144,7 +161,7 @@ Or does not use an `Agent`.
 Example:
 
     var options = {
-      host: 'encrypted.google.com',
+      hostname: 'encrypted.google.com',
       port: 443,
       path: '/',
       method: 'GET',
@@ -191,10 +208,16 @@ for more information.
 
 Global instance of [https.Agent][] for all HTTPS client requests.
 
+[http.Server#setTimeout()]: http.html#http_server_settimeout_msecs_callback
+[http.Server#timeout]: http.html#http_server_timeout
 [Agent]: #https_class_https_agent
 [globalAgent]: #https_https_globalagent
+[http.listen()]: http.html#http_server_listen_port_hostname_backlog_callback
+[http.close()]: http.html#http_server_close_callback
 [http.Agent]: http.html#http_class_http_agent
 [http.request()]: http.html#http_http_request_options_callback
 [https.Agent]: #https_class_https_agent
-[tls.connect()]: tls.html#tls_tls_connect_options_secureconnectlistener
+[https.request()]: #https_https_request_options_callback
+[tls.connect()]: tls.html#tls_tls_connect_options_callback
 [tls.createServer()]: tls.html#tls_tls_createserver_options_secureconnectionlistener
+[SSL_METHODS]: http://www.openssl.org/docs/ssl/ssl.html#DEALING_WITH_PROTOCOL_METHODS
