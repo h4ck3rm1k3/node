@@ -931,10 +931,12 @@ void MarkCompactCollector::Prepare(GCTracer* tracer) {
 
   ASSERT(!FLAG_never_compact || !FLAG_always_compact);
 
-  if (IsConcurrentSweepingInProgress()) {
-    // Instead of waiting we could also abort the sweeper threads here.
-    WaitUntilSweepingCompleted();
+#ifdef ENABLE_GDB_JIT_INTERFACE
+  if (FLAG_gdbjit) {
+    // If GDBJIT interface is active disable compaction.
+    compacting_collection_ = false;
   }
+#endif
 
   // Clear marking bits if incremental marking is aborted.
   if (was_marked_incrementally_ && abort_incremental_marking_) {

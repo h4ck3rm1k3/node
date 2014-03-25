@@ -2195,6 +2195,34 @@ void GDBJITInterface::RegisterDetailedLineInfo(Code* code,
   e->value = TagLineInfo(line_info);
 }
 
+void GDBJITInterface::AddCode(GDBJITInterface::CodeTag, char const*, Code*)
+{
+};
+
+void GDBJITInterface::AddCode(GDBJITInterface::CodeTag, Code*)
+{
+}
+
+void GDBJITInterface::AddCode(GDBJITInterface::CodeTag, String*, Code*)
+{
+
+}
+
+void GDBJITInterface::AddCode(Handle<String>, Handle<Script>, Handle<Code>, CompilationInfo*)
+{
+
+}
+
+void GDBJITInterface::RegisterDetailedLineInfo(Code*, GDBJITLineInfo*)
+{
+
+}
+
+void GDBJITInterface::RemoveCode(Code*)
+{
+
+}
+
 
 } }  // namespace v8::internal
 #endif
